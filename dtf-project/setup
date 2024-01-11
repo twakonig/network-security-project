@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# stops processing in case of failure
+set -euo pipefail
+
+# prints each line executed
+set -x
+
+pwd
+
+echo "Your solution goes here"
+echo "Hello world"
+
+# ---------------------------1---------------------------
+# ping only returns one packet. possibly due to firewall.
+# iptables: list of rules empty, nothing found there
+# nftables: /etc/nftables.conf (table inet filter has rules inside)
+sudo nft delete rule inet filter input handle 5
+# ALTERNATIVE: sudo systemctl stop nftables.service
+
+# --------------------------2-------------------------
+# postgres server listening on port 5432, only grading server may access it
+# IDEA: port 5432 will drop all packets that come from IPs different from the grader
+sudo iptables -I INPUT \! --src 129.132.121.162 -m tcp -p tcp --dport 5432 -j DROP
+
+#---------------------------3-------------------------
+# after checking logs, searched for password file, found at: /var/www/secret
+# IDEA: reset file permissions with chmod
+sudo chmod u=rw,g=,o= /var/www/secret/passwords
+
+#----------------------------4-----------------------
+sudo apt update
+echo yes | sudo apt install snapd
+sudo snap install core
+sudo snap refresh core
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+echo yes | sudo certbot --server https://acme.dtf.netsec.inf.ethz.ch/acme/default/directory --nginx -d twakonig.student.dtf.netsec.inf.ethz.ch --email twakonig@student.ethz.ch --no-eff-email
+
+#--------------------------5------------------------
+# enable TLS 1.3
+# found implementation example at: https://geekflare.com/enable-tls-1-3/
+# change /etc/nginx/nginx.conf  to have: ssl_protocols TLSv1.3;
+sudo sed -i 's*ssl_protocols TLSv1 TLSv1.1 TLSv1.2;*ssl_protocols TLSv1.3;*g' /etc/nginx/nginx.conf
+sudo systemctl restart nginx.service
+
+
+
+sudo nft delete rule inet filter input handle 5
+sudo iptables -I INPUT \! --src 129.132.121.162 -m tcp -p tcp --dport 5432 -j DROP
+sudo chmod u=rw,g=,o= /var/www/secret/passwords

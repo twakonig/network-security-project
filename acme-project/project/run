@@ -1,0 +1,12 @@
+#!/bin/bash
+DIRECTORY=$(dirname "$0")
+echo "Changing to ${DIRECTORY}"
+cd  "$DIRECTORY" || exit 1
+
+echo "Run your project here."
+
+# receives command-line arguments. call main.py here
+python3 main.py "$@"
+
+# run dns01 --dir https://example.com/dir --record 1.2.3.4 --domain netsec.ethz.ch --domain syssec.ethz.ch
+# run dns01 --dir https://localhost:14000/dir --record 0.0.0.0 --domain netsec.ethz.ch 
